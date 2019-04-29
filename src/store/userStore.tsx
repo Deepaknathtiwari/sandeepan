@@ -198,8 +198,14 @@ class UserStore {
                 }
             }
         } else if(nextAppState === "inactive"){
+            console.log("clear inactive")
             //Store.userStore.hasSocketLogin = false;
-            Store.userStore.userData = new userDataModal()
+            // this.socket.emit("disconnect")
+            // this.hasSocketLogin = false;
+            // this.userData = new userDataModal()
+            // this.hasSocketLogin = false;
+            // this.resetStack(Store.userStore.currentComponentId, Utils.Screen.login)
+    
         }
         this.appState = nextAppState;
     }

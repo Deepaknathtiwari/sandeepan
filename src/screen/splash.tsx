@@ -35,7 +35,7 @@ export default class SplashComponent extends React.Component<SplashProps, any> {
 
   handleAnimationEnd = () => {
     if (Store.userStore.userData.user_id) {
-      this.showWelcome()
+      this.showLogin()
     }
     else {
      this.showLogin()
