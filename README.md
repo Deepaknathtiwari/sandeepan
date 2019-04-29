@@ -18,6 +18,6 @@ Existing folder or Git repository
 cd existing_folder
 git init
 git remote add origin http://synerhytop.local:8888/govinda.yadav/sandeepan_RN.git
-git add .///test
+git add .
 git commit
 git push -u origin master
