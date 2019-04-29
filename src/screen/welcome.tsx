@@ -72,6 +72,7 @@ export default class Welcome extends React.Component<WelcomeProps, any> {
         AppState.removeEventListener("change", Store.userStore.handleAppState);
         //BackgroundTimers.stopBackgroundTimer();
         //BackgroundTask.finish()
+        console.log("app close")
     }
     componentDidAppear() {
         Store.userStore.currentScreenName = "welcome"

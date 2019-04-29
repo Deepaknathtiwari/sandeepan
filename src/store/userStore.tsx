@@ -173,6 +173,7 @@ class UserStore {
     }
 
     @action handleAppState = (nextAppState: any) => {
+        console.log("nextAppState",nextAppState)
         if (this.appState.match(/inactive|background/) && nextAppState === "active") {
             if (Object.keys(this.question).length > 0) {
                 let question = this.question;
@@ -197,7 +198,7 @@ class UserStore {
                     }
                 }
             }
-        } else if(nextAppState === "inactive"){
+        } else if(nextAppState === "background"){
             console.log("clear inactive")
             //Store.userStore.hasSocketLogin = false;
             // this.socket.emit("disconnect")
@@ -334,7 +335,7 @@ export function socketHandler ()  {
                 handleNavigationPush(Store.userStore.currentComponentId, Utils.Screen.question)
             }
         }
-        else if(question.token != Store.userStore.userData.token){
+        else if(question.token != Store.userStore.userData.token && Store.userStore.hasSocketLogin){
             Store.userStore.hasSocketLogin = false;
             Store.userStore.userData = new userDataModal()
             Store.userStore.hasSocketLogin = false;
@@ -351,7 +352,7 @@ export function socketHandler ()  {
 
     Store.userStore.socket.on("allLogout", (response: any) => {
         console.log("allLogout is called")
-        if(Store.userStore.hasSocketLogin){
+        if(Store.userStore.hasSocketLogin && Store.userStore.userData.token!=""){
             Store.userStore.socket.emit("disconnect")
             Store.userStore.hasSocketLogin = false;
             Store.userStore.userData = new userDataModal()
