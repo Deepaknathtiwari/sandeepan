@@ -6,7 +6,7 @@ git config --global user.email "govinda.yadav@synergytop.com"
 
 Create a new repository
 
-git clone http://synerhytop.local:8888/govinda.yadav/sandeepan_RN.git
+git clone http://203.100.68.130:8888/govinda.yadav/sandeepan_RN.git
 cd sandeepan_RN
 touch README.md
 git add README.md
