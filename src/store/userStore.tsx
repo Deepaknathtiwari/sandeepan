@@ -23,6 +23,7 @@ class UserStore {
     @observable isLoading: boolean = false;
     @persist @observable userName: string = "";
     @persist @observable userPhone: string = "";
+    
     @observable appState: string = "";
     @observable hasSocketLogin: boolean = false;
     @observable hasNetworkConnection: boolean = false;
@@ -37,9 +38,13 @@ class UserStore {
     @observable currentComponentId: string = ""
     @observable welcomeComponentId: string = ""
     @observable questionComponentId: string = ""
+    @observable selectedOption: number = -1;
     //private phoneRegex = /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/;
     private phoneRegex =/^\d{10}$/;
     private nameRegex = /^[a-zA-Z. ]{1,30}$/
+    private appCloseCounter: number = 0;
+    public manualClose: boolean = false;
+    
     @action getPlayList = async () => {
 
         Utils.client.query({
@@ -90,7 +95,8 @@ class UserStore {
                         console.log("Appstet question Question", response.data)
                         this.userData = response.data;
                         Store.userStore.hasSocketLogin = true;
-                        this.resetStack(this.currentComponentId, Utils.Screen.welcome)
+                        this.resetStack(this.currentComponentId, Utils.Screen.welcome);
+                        this.manualClose = false;
                     }
                 },
                 (errorResponse: any) => {
@@ -115,7 +121,9 @@ class UserStore {
             (response: any) => {
                 this.isLoading = false;
                 if (response.data.success) {
-                    Store.userStore.socket.emit("disconnect")
+                    this.manualClose = true;
+                    Store.userStore.socket.emit("disconnect");
+                    Store.userStore.socket.disconnect();
                     this.userData = new userDataModal()
                     callback();
                     this.hasSocketLogin = false;
@@ -156,6 +164,28 @@ class UserStore {
     //         this.socket.connect()
     //     });
     // }
+
+    backgroundLogout = ()=>{
+        const URL = `?method=logout&user_id=${this.userData.user_id}`;
+
+        Utils.service.getApiCall(
+            URL,
+            ``,
+            (response: any) => {
+                this.isLoading = false;
+                if (response.data.success) {
+                    Store.userStore.socket.emit("disconnect")
+                    this.userData = new userDataModal()
+                    this.hasSocketLogin = false;
+                    
+
+                }
+            },
+            (errorResponse: any) => {
+                this.isLoading = false;
+                this.userData = new userDataModal()
+            })
+    }
     @action doConnection = () => {
         socketHandler();
     }
@@ -175,6 +205,7 @@ class UserStore {
     @action handleAppState = (nextAppState: any) => {
         console.log("nextAppState",nextAppState)
         if (this.appState.match(/inactive|background/) && nextAppState === "active") {
+            this.appCloseCounter =0;
             if (Object.keys(this.question).length > 0) {
                 let question = this.question;
                 //question.total_timer = 1000;
@@ -198,8 +229,15 @@ class UserStore {
                     }
                 }
             }
-        } else if(nextAppState === "background"){
-            console.log("clear inactive")
+        }else if(nextAppState === "background"){
+            // this.appCloseCounter++;
+            // console.log("appCloseCounter", this.appCloseCounter);
+            // console.log("appState", this.appState);
+            // if((this.appState.match(/background/) && this.appCloseCounter === 2) || (this.appState.match(/inactive/) && this.appCloseCounter === 1)){
+            //     console.log("app close event fired");
+            //     this.backgroundLogout();
+            // }
+            
             //Store.userStore.hasSocketLogin = false;
             // this.socket.emit("disconnect")
             // this.hasSocketLogin = false;
@@ -234,6 +272,7 @@ class UserStore {
         if (remainingTime > 0) {
             this.question.remainingTime = remainingTime;
             this.question = Object.assign({}, this.question);
+            this.question.options = Array.from(this.question.options)
             BackgroundTimer.stopBackgroundTimer(),
             BackgroundTimer.runBackgroundTimer(() => {
                 let currentId = this.currentComponentId;
@@ -319,7 +358,7 @@ export function socketHandler ()  {
         console.log("connection")
     })
     Store.userStore.hasSocketConnection = true
-    Store.userStore.socket.emit("addUser", { user_id: Store.userStore.userData.user_id });
+    Store.userStore.socket.emit("addUser", { user_id: Store.userStore.userData.user_id, token: Store.userStore.userData.token });
     
     console.log("doConnection is called", { user_id: Store.userStore.userData.user_id })
     Store.userStore.socket.on("sendToMobileApp", (question: any) => {
@@ -336,24 +375,32 @@ export function socketHandler ()  {
             }
         }
         else if(question.token != Store.userStore.userData.token && Store.userStore.hasSocketLogin){
+            Store.userStore.manualClose = true;
             Store.userStore.hasSocketLogin = false;
             Store.userStore.userData = new userDataModal()
             Store.userStore.hasSocketLogin = false;
+            Store.userStore.socket.emit("disconnect")
+            Store.userStore.socket.disconnect();
             Store.userStore.resetStack(Store.userStore.currentComponentId, Utils.Screen.login)
         }
 
 
     });
     Store.userStore.socket.on('disconnect', function () {
-        console.log("Disconnected");
-        Store.userStore.hasSocketConnection = false;
-        socketHandler();
+        console.log("Disconnected", Store.userStore.manualClose);
+        if(!Store.userStore.manualClose){
+            Store.userStore.hasSocketConnection = false;
+            socketHandler();
+        }
+       
     });
 
     Store.userStore.socket.on("allLogout", (response: any) => {
         console.log("allLogout is called")
         if(Store.userStore.hasSocketLogin && Store.userStore.userData.token!=""){
+            Store.userStore.manualClose = true;
             Store.userStore.socket.emit("disconnect")
+            Store.userStore.socket.disconnect();
             Store.userStore.hasSocketLogin = false;
             Store.userStore.userData = new userDataModal()
             Store.userStore.hasSocketLogin = false;

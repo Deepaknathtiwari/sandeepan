@@ -151,7 +151,7 @@ export default class Question extends React.Component<QuestionProps, any> {
                                 data={Store.userStore.question.options}
                                 renderItem={this.renderRow}
                                 numColumns={2}
-                                extraData={Store.userStore.question}
+                                extraData={this.state}
                                 keyExtractor={(item,index)=>index.toString()}
                             />
                             <View style={[Styles.buttonContainer]}>
